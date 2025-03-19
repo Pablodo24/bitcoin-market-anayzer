@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin Market Analyzer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header>
+        <div class="menu-toggle" onclick="toggleMenu()">☰</div>
+        <div class="logo">
+            <span class="logo-icon">₿</span>
+            <h1>Bitcoin Market Analyzer</h1>
+        </div>
+        <div id="lastUpdated">Last updated: --</div>
+    </header>
+
+    <!-- القائمة الجانبية -->
+    <nav id="sidebar">
+        <ul>
+            <li><a href="#">🏠 الرئيسية</a></li>
+            <li><a href="#">⚙️ الإعدادات</a></li>
+            <li>
+                🌍 اللغة
+                <select id="languageSelector">
+                    <option value="en">English</option>
+                    <option value="ar">العربية</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                </select>
+            </li>
+            <li><button onclick="toggleDarkMode()">🌓 الوضع الليلي</button></li>
+            <li>
+                📩 تلقي الإشعارات
+                <input type="text" id="telegramUser" placeholder="أدخل اسم حساب تلغرام">
+                <button onclick="enableTelegramNotifications()">تفعيل</button>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="control-panel">
+            <div class="timeframe-selector">
+                <button class="timeframe-button" data-days="1">24H</button>
+                <button class="timeframe-button active" data-days="7">7D</button>
+                <button class="timeframe-button" data-days="30">30D</button>
+                <button class="timeframe-button" data-days="90">3M</button>
+            </div>
+            <button id="refreshButton" class="refresh-button">↻ Refresh Data</button>
+        </div>
+
+        <div class="dashboard">
+            <div class="left-column">
+                <div class="card price-card">
+                    <div>Current Bitcoin Price</div>
+                    <div id="currentPrice" class="price-value">$--,---</div>
+                    <div id="priceChange" class="price-change">--</div>
+                    <div id="priceChangeTime">in the last 24 hours</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Price Chart</div>
+                    <div class="chart-container">
+                        <div id="tradingview-chart"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-column">
+                <div class="card">
+                    <div class="card-title">AI-Powered Recommendation</div>
+                    <div id="recommendation" class="recommendation-box hold">
+                        <div class="recommendation-title">Market Signals Indicate</div>
+                        <div class="recommendation-action">WAIT</div>
+                        <div class="recommendation-reason">Analyzing market conditions...</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">
+                        Recent Crypto News & Analysis
+                    </div>
+                    <ul id="newsList" class="news-list">
+                        <li class="news-item">Loading news...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
