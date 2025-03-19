@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bitcoin Market Analyzer</title>
+    <script src="https://s3.tradingview.com/tv.js"></script> <!-- مكتبة الشارت -->
     <style>
         :root {
             --primary: #f2a900;
@@ -11,15 +12,16 @@
             --light: #f8f9fa;
         }
 
-        body {
-            background-color: var(--light);
-            color: var(--dark);
-            font-family: Arial, sans-serif;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        body.dark-mode {
-            background-color: #121212;
-            color: white;
+        body {
+            background-color: #f0f2f5;
+            color: var(--dark);
         }
 
         header {
@@ -29,13 +31,22 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
         }
 
         .menu-toggle {
-            cursor: pointer;
             font-size: 1.5rem;
+            cursor: pointer;
+            margin-right: 10px;
         }
 
+        .header-title {
+            flex-grow: 1;
+            text-align: center;
+            font-size: 1.3rem;
+        }
+
+        /* القائمة الجانبية */
         #sidebar {
             position: fixed;
             left: -250px;
@@ -45,145 +56,122 @@
             background: var(--dark);
             color: white;
             padding: 1rem;
-            transition: left 0.3s;
+            transition: left 0.3s ease;
+            z-index: 1000;
         }
 
-        #sidebar ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        #sidebar ul li {
-            padding: 0.75rem;
-        }
-
-        #sidebar ul li a, #sidebar ul li select, #sidebar ul li button {
-            display: block;
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            text-align: left;
-            background: none;
-            border: none;
-            color: white;
+        .close-btn {
+            font-size: 1.5rem;
             cursor: pointer;
+            color: white;
+            text-align: right;
+            display: block;
         }
 
         .container {
-            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
         }
 
         .dashboard {
             display: flex;
+            flex-wrap: wrap;
             gap: 20px;
-        }
-
-        .left-column, .right-column {
-            flex: 1;
         }
 
         .card {
             background-color: white;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            min-width: 300px;
+            text-align: center;
         }
 
-        .dark-mode .card {
+        .chart-container {
+            height: 500px; 
+            width: 100%;
+        }
+
+        /* الوضع الليلي */
+        .dark-mode {
             background-color: #1e1e1e;
             color: white;
         }
 
-        .chart-container {
-            height: 500px;
+        .dark-mode .card {
+            background-color: #2b2b2b;
+            color: white;
         }
 
-        .recommendation-box {
-            text-align: center;
-            padding: 20px;
-            border-radius: 8px;
+        .menu-open #sidebar {
+            left: 0;
         }
 
-        .recommendation-box.wait {
-            background-color: #ffeb99;
-            color: #cc9900;
-        }
     </style>
 </head>
 <body>
 
     <header>
         <div class="menu-toggle" onclick="toggleMenu()">☰</div>
-        <div class="logo">
-            <h1>Bitcoin Market Analyzer</h1>
-        </div>
+        <h1 class="header-title" id="title">Bitcoin Market Analyzer</h1>
         <div id="lastUpdated">Last updated: --</div>
     </header>
 
     <nav id="sidebar">
+        <span class="close-btn" onclick="toggleMenu()">❌</span>
         <ul>
-            <li><a href="#">🏠 الرئيسية</a></li>
-            <li><a href="#">⚙️ الإعدادات</a></li>
+            <li><a href="#" id="home">🏠 <span data-translate="home">Home</span></a></li>
+            <li><a href="#" id="settings">⚙️ <span data-translate="settings">Settings</span></a></li>
             <li>
-                🌍 اللغة
+                🌍 <span id="language-label" data-translate="language">Language</span>
                 <select id="languageSelector">
-                    <option value="en">English</option>
+                    <option value="en" selected>English</option>
                     <option value="ar">العربية</option>
                     <option value="fr">Français</option>
                     <option value="es">Español</option>
                 </select>
             </li>
-            <li><button onclick="toggleDarkMode()">🌓 الوضع الليلي</button></li>
+            <li><button onclick="toggleDarkMode()">🌓 <span id="dark-mode-label" data-translate="dark_mode">Dark Mode</span></button></li>
             <li>
-                📩 تلقي الإشعارات
-                <input type="text" id="telegramUser" placeholder="أدخل اسم حساب تلغرام">
-                <button onclick="enableTelegramNotifications()">تفعيل</button>
+                📩 <span id="telegram-label" data-translate="telegram_notifications">Telegram Notifications</span>
+                <input type="text" id="telegramUser" placeholder="Enter Telegram Username">
+                <button onclick="enableTelegramNotifications()">Enable</button>
             </li>
         </ul>
     </nav>
 
     <div class="container">
         <div class="dashboard">
-            <div class="left-column">
-                <div class="card">
-                    <div>Current Bitcoin Price</div>
-                    <div id="currentPrice" class="price-value">$--,---</div>
-                    <div id="priceChange" class="price-change">--</div>
-                </div>
-
-                <div class="card">
-                    <div class="card-title">Price Chart</div>
-                    <div class="chart-container">
-                        <div id="tradingview-chart"></div>
-                    </div>
-                </div>
+            <div class="card">
+                <h2 id="price-title" data-translate="current_price">Current Bitcoin Price</h2>
+                <div id="currentPrice" class="price-value">$--,---</div>
             </div>
 
-            <div class="right-column">
-                <div class="card">
-                    <div class="card-title">AI-Powered Recommendation</div>
-                    <div id="recommendation" class="recommendation-box wait">
-                        <div>Market Signals Indicate</div>
-                        <div>WAIT</div>
-                        <div>Analyzing market conditions...</div>
-                    </div>
-                </div>
+            <div class="card">
+                <h2 id="chart-title" data-translate="price_chart">Price Chart</h2>
+                <div class="chart-container" id="tradingview-chart"></div>
+            </div>
 
-                <div class="card">
-                    <div class="card-title">Recent Crypto News & Analysis</div>
-                    <ul id="newsList">
-                        <li>Loading news...</li>
-                    </ul>
-                </div>
+            <div class="card">
+                <h2 data-translate="recommendation">Market Recommendation</h2>
+                <div id="recommendation">Analyzing market conditions...</div>
+            </div>
+
+            <div class="card">
+                <h2 data-translate="crypto_news">Recent Crypto News</h2>
+                <ul id="newsList">
+                    <li>Loading news...</li>
+                </ul>
             </div>
         </div>
     </div>
 
     <script>
         function toggleMenu() {
-            let sidebar = document.getElementById("sidebar");
-            sidebar.style.left = sidebar.style.left === "0px" ? "-250px" : "0px";
+            document.body.classList.toggle("menu-open");
         }
 
         function toggleDarkMode() {
@@ -193,54 +181,55 @@
         function enableTelegramNotifications() {
             let user = document.getElementById("telegramUser").value;
             if (user) {
-                alert(`تم تفعيل الإشعارات لحساب ${user}`);
+                alert(`Notifications enabled for ${user}`);
             } else {
-                alert("يرجى إدخال اسم حساب تلغرام");
+                alert("Please enter a Telegram username");
             }
         }
-
-        document.getElementById("languageSelector").addEventListener("change", (event) => {
-            alert("تم تغيير اللغة إلى " + event.target.value);
-        });
 
         function fetchBitcoinPrice() {
             fetch("https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT")
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById("currentPrice").textContent = `$${parseFloat(data.lastPrice).toFixed(2)}`;
-                    let change = parseFloat(data.priceChangePercent).toFixed(2);
-                    let priceChangeElement = document.getElementById("priceChange");
-                    priceChangeElement.textContent = `${change}%`;
-                    priceChangeElement.style.color = change >= 0 ? "green" : "red";
                 })
                 .catch(error => console.error("Error fetching data:", error));
         }
 
-        fetchBitcoinPrice();
-        setInterval(fetchBitcoinPrice, 60000);
-
         function loadTradingViewChart() {
-            let script = document.createElement('script');
-            script.src = "https://s3.tradingview.com/tv.js";
-            script.onload = function () {
-                new TradingView.widget({
-                    width: "100%",
-                    height: "100%",
-                    symbol: "BINANCE:BTCUSDT",
-                    interval: "D",
-                    timezone: "Etc/UTC",
-                    theme: "light",
-                    style: "1",
-                    locale: "en",
-                    toolbar_bg: "#f1f3f6",
-                    enable_publishing: false,
-                    allow_symbol_change: true,
-                    container_id: "tradingview-chart"
-                });
-            };
-            document.body.appendChild(script);
+            new TradingView.widget({
+                width: "100%",
+                height: "500px",
+                symbol: "BINANCE:BTCUSDT",
+                interval: "D",
+                timezone: "Etc/UTC",
+                theme: "light",
+                style: "1",
+                locale: "en",
+                toolbar_bg: "#f1f3f6",
+                enable_publishing: false,
+                allow_symbol_change: true,
+                container_id: "tradingview-chart"
+            });
         }
 
+        const translations = {
+            en: { current_price: "Current Bitcoin Price", price_chart: "Price Chart", recommendation: "Market Recommendation", crypto_news: "Recent Crypto News", telegram_notifications: "Telegram Notifications" },
+            ar: { current_price: "سعر البيتكوين الحالي", price_chart: "مخطط الأسعار", recommendation: "توصيات السوق", crypto_news: "أخبار العملات الرقمية", telegram_notifications: "إشعارات تيليجرام" },
+            fr: { current_price: "Prix actuel du Bitcoin", price_chart: "Graphique des prix", recommendation: "Recommandation du marché", crypto_news: "Actualités Crypto", telegram_notifications: "Notifications Telegram" }
+        };
+
+        document.getElementById("languageSelector").addEventListener("change", function() {
+            let lang = this.value;
+            document.querySelectorAll("[data-translate]").forEach(el => {
+                let key = el.getAttribute("data-translate");
+                if (translations[lang][key]) {
+                    el.textContent = translations[lang][key];
+                }
+            });
+        });
+
+        fetchBitcoinPrice();
         loadTradingViewChart();
     </script>
 
