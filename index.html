@@ -4,20 +4,123 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bitcoin Market Analyzer</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        :root {
+            --primary: #f2a900;
+            --dark: #343a40;
+            --light: #f8f9fa;
+        }
+
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            font-family: Arial, sans-serif;
+        }
+
+        body.dark-mode {
+            background-color: #121212;
+            color: white;
+        }
+
+        header {
+            background-color: var(--dark);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .menu-toggle {
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+
+        #sidebar {
+            position: fixed;
+            left: -250px;
+            top: 0;
+            width: 250px;
+            height: 100%;
+            background: var(--dark);
+            color: white;
+            padding: 1rem;
+            transition: left 0.3s;
+        }
+
+        #sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        #sidebar ul li {
+            padding: 0.75rem;
+        }
+
+        #sidebar ul li a, #sidebar ul li select, #sidebar ul li button {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            text-align: left;
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        .dashboard {
+            display: flex;
+            gap: 20px;
+        }
+
+        .left-column, .right-column {
+            flex: 1;
+        }
+
+        .card {
+            background-color: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark-mode .card {
+            background-color: #1e1e1e;
+            color: white;
+        }
+
+        .chart-container {
+            height: 500px;
+        }
+
+        .recommendation-box {
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .recommendation-box.wait {
+            background-color: #ffeb99;
+            color: #cc9900;
+        }
+    </style>
 </head>
 <body>
 
     <header>
         <div class="menu-toggle" onclick="toggleMenu()">☰</div>
         <div class="logo">
-            <span class="logo-icon">₿</span>
             <h1>Bitcoin Market Analyzer</h1>
         </div>
         <div id="lastUpdated">Last updated: --</div>
     </header>
 
-    <!-- القائمة الجانبية -->
     <nav id="sidebar">
         <ul>
             <li><a href="#">🏠 الرئيسية</a></li>
@@ -41,23 +144,12 @@
     </nav>
 
     <div class="container">
-        <div class="control-panel">
-            <div class="timeframe-selector">
-                <button class="timeframe-button" data-days="1">24H</button>
-                <button class="timeframe-button active" data-days="7">7D</button>
-                <button class="timeframe-button" data-days="30">30D</button>
-                <button class="timeframe-button" data-days="90">3M</button>
-            </div>
-            <button id="refreshButton" class="refresh-button">↻ Refresh Data</button>
-        </div>
-
         <div class="dashboard">
             <div class="left-column">
-                <div class="card price-card">
+                <div class="card">
                     <div>Current Bitcoin Price</div>
                     <div id="currentPrice" class="price-value">$--,---</div>
                     <div id="priceChange" class="price-change">--</div>
-                    <div id="priceChangeTime">in the last 24 hours</div>
                 </div>
 
                 <div class="card">
@@ -71,25 +163,86 @@
             <div class="right-column">
                 <div class="card">
                     <div class="card-title">AI-Powered Recommendation</div>
-                    <div id="recommendation" class="recommendation-box hold">
-                        <div class="recommendation-title">Market Signals Indicate</div>
-                        <div class="recommendation-action">WAIT</div>
-                        <div class="recommendation-reason">Analyzing market conditions...</div>
+                    <div id="recommendation" class="recommendation-box wait">
+                        <div>Market Signals Indicate</div>
+                        <div>WAIT</div>
+                        <div>Analyzing market conditions...</div>
                     </div>
                 </div>
 
                 <div class="card">
-                    <div class="card-title">
-                        Recent Crypto News & Analysis
-                    </div>
-                    <ul id="newsList" class="news-list">
-                        <li class="news-item">Loading news...</li>
+                    <div class="card-title">Recent Crypto News & Analysis</div>
+                    <ul id="newsList">
+                        <li>Loading news...</li>
                     </ul>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        function toggleMenu() {
+            let sidebar = document.getElementById("sidebar");
+            sidebar.style.left = sidebar.style.left === "0px" ? "-250px" : "0px";
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle("dark-mode");
+        }
+
+        function enableTelegramNotifications() {
+            let user = document.getElementById("telegramUser").value;
+            if (user) {
+                alert(`تم تفعيل الإشعارات لحساب ${user}`);
+            } else {
+                alert("يرجى إدخال اسم حساب تلغرام");
+            }
+        }
+
+        document.getElementById("languageSelector").addEventListener("change", (event) => {
+            alert("تم تغيير اللغة إلى " + event.target.value);
+        });
+
+        function fetchBitcoinPrice() {
+            fetch("https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT")
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("currentPrice").textContent = `$${parseFloat(data.lastPrice).toFixed(2)}`;
+                    let change = parseFloat(data.priceChangePercent).toFixed(2);
+                    let priceChangeElement = document.getElementById("priceChange");
+                    priceChangeElement.textContent = `${change}%`;
+                    priceChangeElement.style.color = change >= 0 ? "green" : "red";
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        }
+
+        fetchBitcoinPrice();
+        setInterval(fetchBitcoinPrice, 60000);
+
+        function loadTradingViewChart() {
+            let script = document.createElement('script');
+            script.src = "https://s3.tradingview.com/tv.js";
+            script.onload = function () {
+                new TradingView.widget({
+                    width: "100%",
+                    height: "100%",
+                    symbol: "BINANCE:BTCUSDT",
+                    interval: "D",
+                    timezone: "Etc/UTC",
+                    theme: "light",
+                    style: "1",
+                    locale: "en",
+                    toolbar_bg: "#f1f3f6",
+                    enable_publishing: false,
+                    allow_symbol_change: true,
+                    container_id: "tradingview-chart"
+                });
+            };
+            document.body.appendChild(script);
+        }
+
+        loadTradingViewChart();
+    </script>
+
 </body>
 </html>
