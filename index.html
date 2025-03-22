@@ -231,10 +231,13 @@
 
         fetchBitcoinPrice();
         loadTradingViewChart();
-        // جلب بيانات التحليل من الخادم
+      // رابط الـ API الجديد على Railway
+const API_URL = "https://bitcoin-api.up.railway.app/analysis";
+
+// جلب بيانات التحليل من API
 async function fetchMarketAnalysis() {
     try {
-        const response = await fetch("http://localhost:8000/analysis");
+        const response = await fetch(API_URL);
         const data = await response.json();
 
         // تحديث سعر البيتكوين
