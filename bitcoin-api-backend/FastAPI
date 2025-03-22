@@ -1,0 +1,15 @@
+from fastapi import FastAPI
+import ccxt
+
+app = FastAPI()
+
+@app.get("/analysis")
+def analyze():
+    exchange = ccxt.binance()
+    ticker = exchange.fetch_ticker("BTC/USDT")
+    current_price = ticker["last"]
+
+    return {
+        "current_price": current_price,
+        "recommendation": "WAIT"
+    }
